@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd packages/frontend && pnpm build",
+  "outputDirectory": "packages/frontend/dist",
+  "installCommand": "corepack enable && corepack prepare pnpm@latest --activate && pnpm install",
+  "framework": null,
+  "env": {
+    "ENABLE_EXPERIMENTAL_COREPACK": "1"
+  }
+}
