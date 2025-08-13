@@ -1,9 +1,6 @@
 {
-  "buildCommand": "cd packages/frontend && pnpm build",
+  "buildCommand": "cd packages/frontend && npm run build",
   "outputDirectory": "packages/frontend/dist",
-  "installCommand": "corepack enable && corepack prepare pnpm@latest --activate && pnpm install",
-  "framework": null,
-  "env": {
-    "ENABLE_EXPERIMENTAL_COREPACK": "1"
-  }
+  "installCommand": "npm install --production=false",
+  "framework": null
 }
