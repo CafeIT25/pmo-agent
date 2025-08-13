@@ -11,8 +11,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "prepare": "node -e \"try{require('husky').install()}catch(e){if(e.code!=='MODULE_NOT_FOUND')throw e}\""
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

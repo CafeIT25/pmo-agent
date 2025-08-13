@@ -264,7 +264,7 @@ function TaskCard({
             {task.title}
           </h3>
           {task.created_by === 'ai' && (
-            <Bot className="h-3.5 w-3.5 text-accent opacity-70" title="AIが作成" />
+            <Bot className="h-3.5 w-3.5 text-accent opacity-70" />
           )}
         </div>
 

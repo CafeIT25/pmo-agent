@@ -288,9 +288,9 @@ export const UsageDashboard: React.FC = () => {
                 <CardDescription>機能別のコスト分布</CardDescription>
               </CardHeader>
               <CardContent>
-                {monthlyStats?.purpose_breakdown.length > 0 ? (
+                {(monthlyStats?.purpose_breakdown || []).length > 0 ? (
                   <div className="space-y-3">
-                    {monthlyStats.purpose_breakdown.map((item, index) => (
+                    {monthlyStats?.purpose_breakdown?.map((item, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
                         <span className="font-medium">{item.purpose}</span>
                         <span className="text-right">
@@ -313,9 +313,9 @@ export const UsageDashboard: React.FC = () => {
                 <CardDescription>使用モデルの比較</CardDescription>
               </CardHeader>
               <CardContent>
-                {monthlyStats?.model_breakdown.length > 0 ? (
+                {(monthlyStats?.model_breakdown || []).length > 0 ? (
                   <div className="space-y-3">
-                    {monthlyStats.model_breakdown.map((item, index) => (
+                    {monthlyStats?.model_breakdown?.map((item, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
                         <Badge variant={getModelBadgeColor(item.model)}>
                           {item.model}
@@ -382,9 +382,9 @@ export const UsageDashboard: React.FC = () => {
               <CardDescription>1ヶ月間のコスト推移</CardDescription>
             </CardHeader>
             <CardContent>
-              {monthlyStats?.daily_usage.length > 0 ? (
+              {(monthlyStats?.daily_usage || []).length > 0 ? (
                 <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {monthlyStats.daily_usage.map((item, index) => (
+                  {monthlyStats?.daily_usage?.map((item, index) => (
                     <div key={index} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded">
                       <span className="text-sm font-medium">
                         {new Date(item.date).getDate()}日

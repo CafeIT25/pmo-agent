@@ -10,20 +10,22 @@ const realApiClient = axios.create({
 });
 
 // モックモードの場合はmockClientを使用
-const apiClient = isMockMode ? mockClient as any : realApiClient;
+const apiClient = isMockMode ? mockClient : realApiClient;
 
 // モックモードでない場合のみインターセプターを設定
 if (!isMockMode) {
   // リクエストインターセプター
-  apiClient.interceptors.request.use(
+  realApiClient.interceptors.request.use(
     (config) => {
       // Zustandストアから直接トークンを取得
       const { accessToken } = useAuthStore.getState();
-      if (accessToken) {
+      if (accessToken && config.headers) {
         config.headers.Authorization = `Bearer ${accessToken}`;
       }
       // CSRF対策のためのヘッダー追加
-      config.headers['X-Requested-With'] = 'XMLHttpRequest';
+      if (config.headers) {
+        config.headers['X-Requested-With'] = 'XMLHttpRequest';
+      }
       return config;
     },
     (error) => {
@@ -32,30 +34,30 @@ if (!isMockMode) {
   );
 
   // レスポンスインターセプター
-  apiClient.interceptors.response.use(
+  realApiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
       const originalRequest = error.config;
 
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true;
+      if (error.response?.status === 401 && originalRequest && !(originalRequest as { _retry?: boolean })._retry) {
+        (originalRequest as { _retry?: boolean })._retry = true;
 
         try {
-          const { refreshToken, setTokens, clearAuth } = useAuthStore.getState();
+          const { refreshToken, setTokens } = useAuthStore.getState();
 
           if (refreshToken) {
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/auth/refresh`, {
               refresh_token: refreshToken,
             });
 
-            const { access_token, refresh_token: new_refresh_token } = response.data;
+            const { access_token, refresh_token } = response.data;
+            setTokens(access_token, refresh_token);
 
-            // 新しいトークンを保存
-            setTokens(access_token, new_refresh_token || refreshToken);
-
-            // リトライ
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
-            return apiClient(originalRequest);
+            // 元のリクエストを再実行
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${access_token}`;
+            }
+            return realApiClient(originalRequest);
           }
         } catch (refreshError) {
           // リフレッシュ失敗時はログアウト
@@ -75,4 +77,5 @@ if (isMockMode) {
   console.log('🎭 Mock Mode is enabled. Using mock data instead of real API.');
 }
 
+export { apiClient };
 export default apiClient;
