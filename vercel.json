@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd packages/frontend && npm run build",
+  "buildCommand": "npx turbo build --filter=@pmo-agent/frontend",
   "outputDirectory": "packages/frontend/dist",
   "installCommand": "npm install --production=false --ignore-scripts",
   "framework": null
