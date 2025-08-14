@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npx turbo build --filter=@pmo-agent/frontend && find . -name 'dist' -type d 2>/dev/null",
-  "outputDirectory": "packages/frontend/dist",
+  "buildCommand": "npx turbo build --filter=@pmo-agent/frontend",
+  "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": null
 }
