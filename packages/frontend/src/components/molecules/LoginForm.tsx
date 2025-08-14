@@ -186,6 +186,57 @@ export const LoginForm: React.FC = () => {
           </div>
         </div>
 
+        {/* テストユーザー情報 */}
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="text-sm font-medium text-blue-800 mb-2">🧪 テストアカウント</h3>
+          <div className="space-y-2 text-xs text-blue-700">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <strong>一般ユーザー:</strong><br />
+                test@example.com<br />
+                testpass123
+              </div>
+              <div>
+                <strong>管理者:</strong><br />
+                admin@example.com<br />
+                adminpass123
+              </div>
+            </div>
+            <div className="mt-2">
+              <strong>デモユーザー:</strong><br />
+              demo@example.com / demopass123
+            </div>
+          </div>
+          <div className="mt-3 space-y-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => {
+                setEmail('test@example.com')
+                setPassword('testpass123')
+              }}
+              disabled={isLoading}
+            >
+              一般ユーザーでログイン
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => {
+                setEmail('demo@example.com')
+                setPassword('demopass123')
+              }}
+              disabled={isLoading}
+            >
+              デモユーザーでログイン
+            </Button>
+          </div>
+        </div>
+
         <div className="text-center text-sm">
           <a href="/register" className="text-blue-600 hover:underline">
             アカウントをお持ちでない方はこちら
