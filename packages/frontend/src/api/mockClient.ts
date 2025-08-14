@@ -1,7 +1,12 @@
 import { mockService } from '../services/mockService';
 
-// モックモードかどうかを判定
-export const isMockMode = import.meta.env.VITE_MOCK_MODE === 'true';
+// モックモードかどうかを判定 (デフォルトで有効)
+export const isMockMode = import.meta.env.VITE_MOCK_MODE !== 'false' && 
+                         (import.meta.env.VITE_MOCK_MODE === 'true' || 
+                          import.meta.env.VITE_API_URL === undefined || 
+                          import.meta.env.VITE_API_URL === '' ||
+                          import.meta.env.NODE_ENV === 'development' ||
+                          true); // デフォルトで有効
 
 // APIクライアントのモックラッパー
 export const mockClient = {

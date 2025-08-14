@@ -7,6 +7,7 @@ import { useToast } from '../atoms/use-toast'
 import { Loader2, Mail, Lock, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useNavigate } from 'react-router-dom'
+import { isMockMode } from '../../api/mockClient'
 
 export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -186,9 +187,11 @@ export const LoginForm: React.FC = () => {
           </div>
         </div>
 
-        {/* テストユーザー情報 */}
+        {/* テストユーザー情報 - 常に表示 */}
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-800 mb-2">🧪 テストアカウント</h3>
+          <h3 className="text-sm font-medium text-blue-800 mb-2">
+            🧪 テストアカウント {isMockMode && '(モックモード有効)'}
+          </h3>
           <div className="space-y-2 text-xs text-blue-700">
             <div className="grid grid-cols-2 gap-4">
               <div>
