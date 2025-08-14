@@ -20,23 +20,26 @@ graph TB
         UI[shadcn/ui Components]
     end
     
-    subgraph "Backend (Render)"
+    subgraph "Backend (Railway)"
         API[FastAPI<br/>REST API]
         Auth[Auth Service]
         Task[Task Service]
         Mail[Mail Service]
         AI[AI Service]
+        OAuth[OAuth Service]
         Worker[Celery Worker]
+        Cost[Cost Service]
     end
     
-    subgraph "Data Layer (Render)"
+    subgraph "Data Layer (Railway)"
         PG[(PostgreSQL)]
         Redis[(Redis)]
     end
     
     subgraph "External Services"
-        Google[Google API]
-        MS[Microsoft API]
+        Google[Gmail API]
+        MS[Microsoft Graph API]
+        OpenAI[OpenAI API]
         Bedrock[AWS Bedrock]
         SMTP[SMTP Server]
     end
@@ -54,7 +57,11 @@ graph TB
     Worker --> Redis
     Worker --> Google
     Worker --> MS
+    OAuth --> Google
+    OAuth --> MS
+    AI --> OpenAI
     AI --> Bedrock
+    Cost --> OpenAI
     Auth --> SMTP
     
     Store -.-> React
@@ -721,11 +728,12 @@ graph LR
     Queue --> Worker2[Celery Worker 2]
     
     Worker1 --> MailSync[メール同期]
-    Worker1 --> AIProcess[AI処理]
+    Worker1 --> AIThread[AI スレッド分析]
     
-    MailSync --> Google[Google API]
-    MailSync --> MS[Microsoft API]
-    AIProcess --> Bedrock[AWS Bedrock]
+    MailSync --> Gmail[Gmail API]
+    MailSync --> Graph[Microsoft Graph API]
+    AIThread --> OpenAI[OpenAI API]
+    AIThread --> Bedrock[AWS Bedrock]
     
     Worker1 --> Result[Redis Result]
     Worker2 --> Result
@@ -741,56 +749,59 @@ from typing import List, Dict
 
 celery_app = Celery('pmo_agent')
 
-@celery_app.task(bind=True, max_retries=3)
+@celery_app.task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 60})
 def sync_emails(self, account_id: str, user_id: str) -> Dict:
     """メール同期タスク"""
-    try:
-        # 進捗更新
-        self.update_state(
-            state='PROGRESS',
-            meta={'current': 0, 'total': 100}
-        )
-        
-        # メール取得
-        email_service = EmailService()
-        emails = email_service.fetch_emails(account_id)
-        
-        # バッチ処理
-        batch_size = 50
-        for i in range(0, len(emails), batch_size):
-            batch = emails[i:i+batch_size]
-            process_email_batch.delay(batch, user_id)
-            
-            # 進捗更新
-            progress = (i + batch_size) / len(emails) * 100
-            self.update_state(
-                state='PROGRESS',
-                meta={'current': progress, 'total': 100}
-            )
-        
-        return {'total': len(emails), 'status': 'completed'}
-        
-    except Exception as exc:
-        # リトライ
-        raise self.retry(exc=exc, countdown=60)
+    # 進捗更新
+    self.update_state(
+        state='PROGRESS',
+        meta={'current': 0, 'total': 100}
+    )
+    
+    # メールサービス
+    email_service = EmailService()
+    
+    # Gmail: 最大50件のメッセージIDを取得後、個別に詳細取得
+    # Outlook: デルタクエリでバッチ取得
+    emails = email_service.sync_emails_async(account_id, user_id)
+    
+    # 各メールを個別にデータベースに保存
+    for email in emails:
+        email_service.save_email_to_db(email, user_id)
+    
+    # スレッドごとにグループ化してAI分析
+    thread_groups = email_service.group_by_thread(emails)
+    
+    for thread_id, thread_emails in thread_groups.items():
+        # スレッド単位でAI分析タスクをキューに追加
+        analyze_email_thread_for_tasks.delay(thread_emails, user_id)
+    
+    return {'total': len(emails), 'threads': len(thread_groups), 'status': 'completed'}
 
-@celery_app.task
-def process_email_batch(emails: List[Dict], user_id: str) -> None:
-    """メールバッチをAIで処理"""
+@celery_app.task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 60})
+def analyze_email_thread_for_tasks(self, thread_emails: List[Dict], user_id: str) -> None:
+    """スレッド単位でメールをAI分析してタスク生成"""
     ai_service = AIService()
     task_service = TaskService()
+    email_service = EmailService()
     
-    # AI判定
-    results = ai_service.batch_analyze_emails(emails)
+    # スレッド全体をまとめてAI分析
+    thread_analysis = ai_service.analyze_email_thread(
+        emails=thread_emails,
+        context={'user_id': user_id}
+    )
     
-    # タスク作成
-    for email, result in zip(emails, results):
-        if result['is_task']:
-            task_service.create_from_email(
-                user_id=user_id,
-                email=email,
-                ai_result=result
-            )
+    # AI判定結果に基づいてタスク作成
+    if thread_analysis.get('should_create_task', False):
+        task_service.create_from_email_thread(
+            user_id=user_id,
+            thread_emails=thread_emails,
+            ai_analysis=thread_analysis
+        )
+        
+    # 処理済みマークを各メールに設定
+    for email in thread_emails:
+        email_service.mark_as_processed(email['id'])
 ```
 
 ## 7. パフォーマンス最適化

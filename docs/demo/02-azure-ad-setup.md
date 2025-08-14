@@ -239,7 +239,8 @@ MICROSOFT_SCOPES=User.Read Mail.Read Mail.ReadWrite offline_access
 # Graph API設定
 GRAPH_API_BASE_URL=https://graph.microsoft.com/v1.0
 GRAPH_API_TIMEOUT=30
-OUTLOOK_BATCH_SIZE=20
+# メール処理設定（現在は個別処理だが、将来のバッチ処理用）
+# OUTLOOK_BATCH_SIZE=20
 ```
 
 ⚠️ **重要**: 

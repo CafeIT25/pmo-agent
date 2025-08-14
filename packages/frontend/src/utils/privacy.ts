@@ -22,14 +22,42 @@ export function anonymizeEmail(email: string): string {
 }
 
 /**
- * メール本文からメールアドレスを除去
+ * メール本文からメールアドレスを除去（強化版）
  * @param content メール本文
  * @returns メールアドレスが除去された本文
  */
 export function removeEmailAddresses(content: string): string {
-  // メールアドレスパターンを匿名化
+  // 基本的なメールアドレスパターン
   const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  return content.replace(emailPattern, '[メールアドレス]');
+  
+  // 日本語メール署名でよくあるパターン
+  const signaturePatterns = [
+    // "Email: user@example.com" 形式
+    /Email\s*[:：]\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi,
+    // "E-mail: user@example.com" 形式
+    /E-?mail\s*[:：]\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi,
+    // "メール: user@example.com" 形式
+    /メール\s*[:：]\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi,
+    // 単独で行末に記載されるメールアドレス
+    /^\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\s*$/gm,
+  ];
+  
+  let result = content;
+  
+  // 各パターンを匿名化
+  signaturePatterns.forEach(pattern => {
+    result = result.replace(pattern, (match) => {
+      if (match.includes('Email') || match.includes('E-mail') || match.includes('メール')) {
+        return match.replace(emailPattern, '[メールアドレス]');
+      }
+      return '[メールアドレス]';
+    });
+  });
+  
+  // 残った基本パターンを処理
+  result = result.replace(emailPattern, '[メールアドレス]');
+  
+  return result;
 }
 
 /**

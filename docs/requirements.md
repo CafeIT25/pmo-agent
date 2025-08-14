@@ -102,28 +102,36 @@ AND プログレスバーを表示する
 
 ```
 WHILE メール同期ジョブが実行中の間
-THE SYSTEM SHALL 過去 7 日間のメールを取得する
+THE SYSTEM SHALL Gmail API / Microsoft Graph API を使用してメールを取得する
+AND Gmail: バッチリクエスト（20件/バッチ）で効率的にメール詳細を取得する
+AND Outlook: デルタクエリ + 並行ページネーションでメール詳細を取得する
+AND インテリジェントキャッシュによる重複API呼び出しを回避する
+AND 増分同期（last_sync_token / deltaLink）を使用して効率的に同期する
 AND 除外ドメインリストに部分一致する送信者のメールを除外する
 AND 既に処理済みのメール ID はスキップする
-AND 100 件ごとにバッチ処理する
+AND 各メールを個別にデータベースに保存する
 AND 進捗状況を更新する
 ```
 
-#### タスク性判定
+#### タスク性判定とAI分析
 
 ```
 WHEN メール同期で新しいメールが取得された時
 GIVEN メールの件名と本文が存在する場合
-THEN システムは最大 50 件をまとめて AI API に送信する
+THEN システムはthread_idでメールをグループ化する
+AND スレッド単位でCeleryタスク（analyze_email_thread_for_tasks）をキューに追加する
 AND 構造化されたプロンプトでタスク判定を要求する
+AND OpenAI API / AWS Bedrock を使用してAI分析を実行する
 AND JSON 形式でレスポンスを受け取る
 AND 各メールのタスク性スコアを記録する
 ```
 
 ```
 WHERE AI API の応答が
-IS JSON パースエラーの場合
-THE SYSTEM SHALL エラーログを記録する
+IS JSON パースエラーまたはネットワークエラーの場合
+THE SYSTEM SHALL Celeryの自動リトライ機能を使用する
+AND 最大3回、60秒間隔でリトライする
+AND エラーログを記録する
 AND 該当メールを「判定保留」として記録する
 AND 処理を継続する
 ```
@@ -229,10 +237,12 @@ AND 結果をタスクに紐付けて保存する
 WHERE システムの応答時間が測定される時
 THE SYSTEM SHALL 以下の基準を満たす
 - ログイン処理: 2 秒以内
-- ダッシュボード初期表示: 3 秒以内（コールドスタート時を除く）
+- ダッシュボード初期表示: 3 秒以内（Railway コールドスタート時は10秒許容）
 - タスク操作（作成/更新/削除）: 500ms 以内
-- メール同期: 1000 件を 5 分以内に処理
-- AI サポート生成: 30 秒以内
+- Gmail同期: 50件を 15 秒以内（バッチリクエスト最適化により87%改善）
+- Outlook同期: 100件を 30 秒以内（デルタクエリ + 並行処理最適化）
+- AI サポート生成: 30 秒以内（OpenAI API）
+- AI分析（スレッド単位）: 60 秒以内
 ```
 
 ### 3.2 セキュリティ要件
@@ -247,6 +257,9 @@ THE SYSTEM SHALL 以下の対策を実装する
 - XSS 対策（Content Security Policy の適用）
 - SQL インジェクション対策（パラメータ化クエリ）
 - レート制限（同一 IP から 100 リクエスト/分まで）
+- OAuth トークンの自動リフレッシュ機能
+- API エラー時の指数バックオフリトライ
+- メール同期のCelery自動リトライ（最大3回、60秒間隔）
 ```
 
 ### 3.3 可用性要件
@@ -265,10 +278,12 @@ THE SYSTEM SHALL 以下の可用性を提供する
 ```
 WHERE システムの負荷が増加した時
 THE SYSTEM SHALL 以下の拡張性を持つ
-- 同時接続ユーザー: 10 名まで
+- 同時接続ユーザー: 10 名まで（Railway 1GB RAM制限）
 - データ保持: ユーザーあたり 10,000 タスクまで
-- メール処理: 1 日あたり 5,000 件まで
-- ストレージ: ユーザーあたり 1GB まで
+- Gmail同期: 1日あたり1,000件まで（個別API制限考慮）
+- Outlook同期: 1日あたり5,000件まで（効率的なデルタクエリ）
+- PostgreSQLストレージ: 全体で 1GB まで（Railway制限）
+- Celeryタスク: 同時実行3タスクまで
 ```
 
 ## 4. 制約事項
@@ -276,14 +291,20 @@ THE SYSTEM SHALL 以下の拡張性を持つ
 ### 4.1 技術的制約
 
 - **インフラ**: 無料プランでの運用を前提
-  - Vercel Hobby Plan (フロントエンド)
-  - Render Free Plan (バックエンド、DB、Redis)
+  - Vercel Free Plan (フロントエンド) - 100GB帯域幅/月
+  - Railway Free Plan (バックエンド + PostgreSQL) - $5クレジット/月、500時間実行
+  - Redis: Railway内蔵またはRedis Cloud 30MB無料
 - **開発言語・フレームワーク**: 
-  - フロントエンド: React + TypeScript
-  - バックエンド: Python + FastAPI
+  - フロントエンド: React + TypeScript + Vite, Tailwind CSS
+  - バックエンド: Python 3.11+ + FastAPI + SQLAlchemy + Alembic
+  - データベース: PostgreSQL
+  - 非同期処理: Celery + Redis
+  - 認証: JWT + bcrypt
 - **外部サービス**:
+  - OpenAI API (従量課金)
   - AWS Bedrock (従量課金)
-  - Google/Microsoft API (無料枠内)
+  - Gmail API (無料枠内)
+  - Microsoft Graph API (無料枠内)
 
 ### 4.2 運用制約
 

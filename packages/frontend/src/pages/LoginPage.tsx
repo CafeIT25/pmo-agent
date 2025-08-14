@@ -52,11 +52,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="w-full max-w-md space-y-8 rounded-lg bg-card p-8 shadow-lg border">
         <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight">PMO Agent</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">PMO Agent</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
             アカウントにログインしてください
           </p>
         </div>
@@ -64,32 +64,32 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email">メールアドレス</Label>
+              <Label htmlFor="email" className="text-foreground">メールアドレス</Label>
               <Input
                 id="email"
                 type="email"
                 autoComplete="email"
                 {...register('email')}
-                className="mt-1"
+                className="mt-1 text-foreground"
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-1 text-sm text-destructive">
                   {errors.email.message}
                 </p>
               )}
             </div>
 
             <div>
-              <Label htmlFor="password">パスワード</Label>
+              <Label htmlFor="password" className="text-foreground">パスワード</Label>
               <Input
                 id="password"
                 type="password"
                 autoComplete="current-password"
                 {...register('password')}
-                className="mt-1"
+                className="mt-1 text-foreground"
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-1 text-sm text-destructive">
                   {errors.password.message}
                 </p>
               )}

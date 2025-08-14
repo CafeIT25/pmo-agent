@@ -3,24 +3,11 @@ import { Toaster } from '@/components/atoms/toaster';
 import LoginPage from '@/pages/LoginPage';
 import DashboardPage from '@/pages/DashboardPage';
 import { useAuthStore } from '@/store/authStore';
-import { useState, useEffect } from 'react';
+import { useTheme } from '@/hooks/useTheme';
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [theme, setTheme] = useState<'light' | 'dark'>(
-    localStorage.getItem('theme') as 'light' | 'dark' || 'light'
-  );
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <>

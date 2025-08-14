@@ -1,11 +1,15 @@
 from typing import Optional, List, Dict, Any
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy import and_, func, desc, asc
 from datetime import datetime
 from uuid import UUID
 
-from app.models.task import Task
+from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.history import TaskHistory, AISupport
+from app.models.user import User
+from app.models.email import ProcessedEmail
 from app.schemas.task import TaskCreate, TaskUpdate
 from app.crud.base import CRUDBase
 
@@ -26,17 +30,39 @@ class CRUDTask(CRUDBase[Task]):
         db: AsyncSession,
         user_id: str,
         skip: int = 0,
-        limit: int = 100,
+        limit: int = 50,  # Railway無料プラン対応で制限
         status: Optional[str] = None,
         priority: Optional[str] = None
     ) -> List[Task]:
-        """Get tasks for a user with optional filters"""
+        """
+        Get tasks for a user with optimal performance
+        N+1問題を解決し、Railway制限を考慮した実装
+        """
         statement = select(Task).where(Task.user_id == user_id)
         
         if status:
             statement = statement.where(Task.status == status)
         if priority:
             statement = statement.where(Task.priority == priority)
+        
+        # N+1問題解決: 関連データを事前読み込み
+        statement = statement.options(
+            # ユーザー情報を事前読み込み（必要な場合のみ）
+            joinedload(Task.user).load_only(User.name, User.email),
+            
+            # ソースメール情報を条件付きで読み込み
+            joinedload(Task.source_email).load_only(
+                ProcessedEmail.sender,
+                ProcessedEmail.subject,
+                ProcessedEmail.email_date
+            )
+        )
+        
+        # パフォーマンス最適化: インデックスを活用したソート
+        statement = statement.order_by(
+            desc(Task.updated_at),  # 更新日降順
+            asc(Task.priority == TaskPriority.HIGH),  # 高優先度を上位に
+        )
         
         statement = statement.offset(skip).limit(limit)
         result = await db.execute(statement)
@@ -211,6 +237,116 @@ class CRUDTask(CRUDBase[Task]):
         ).order_by(AISupport.created_at.desc())
         result = await db.execute(statement)
         return result.scalars().all()
+
+    async def get_dashboard_summary_optimized(
+        self, 
+        db: AsyncSession, 
+        user_id: str
+    ) -> dict:
+        """
+        ダッシュボード用のサマリー情報を1回のクエリで取得
+        Railway無料プラン向けメモリ効率最適化
+        """
+        
+        # 集約クエリで一度にサマリーを取得（N+1問題回避）
+        summary_query = select(
+            func.count().label('total_tasks'),
+            func.count().filter(Task.status == TaskStatus.TODO).label('todo_count'),
+            func.count().filter(Task.status == TaskStatus.PROGRESS).label('progress_count'),
+            func.count().filter(Task.status == TaskStatus.DONE).label('done_count'),
+            func.count().filter(
+                and_(
+                    Task.due_date.isnot(None),
+                    Task.due_date < func.now(),
+                    Task.status != TaskStatus.DONE
+                )
+            ).label('overdue_count')
+        ).where(Task.user_id == user_id)
+        
+        result = await db.execute(summary_query)
+        row = result.first()
+        
+        return {
+            'total_tasks': row.total_tasks or 0,
+            'todo_count': row.todo_count or 0,
+            'progress_count': row.progress_count or 0, 
+            'done_count': row.done_count or 0,
+            'overdue_count': row.overdue_count or 0,
+            'completion_rate': round((row.done_count / row.total_tasks * 100), 1) if row.total_tasks > 0 else 0
+        }
+
+    async def get_tasks_with_emails_optimized(
+        self, 
+        db: AsyncSession, 
+        user_id: str,
+        has_email: bool = True,
+        limit: int = 20
+    ) -> List[Task]:
+        """
+        メール起源のタスクを効率的に取得
+        AI分析機能向け最適化
+        """
+        
+        statement = select(Task).where(Task.user_id == user_id)
+        
+        if has_email:
+            # メール起源のタスクのみ
+            statement = statement.where(Task.source_email_id.isnot(None))
+            
+            # メール情報も事前読み込み
+            statement = statement.options(
+                joinedload(Task.source_email).load_only(
+                    ProcessedEmail.sender,
+                    ProcessedEmail.subject,
+                    ProcessedEmail.body_preview,
+                    ProcessedEmail.email_date,
+                    ProcessedEmail.ai_analysis
+                )
+            )
+        else:
+            # ユーザー作成タスクのみ
+            statement = statement.where(Task.source_email_id.is_(None))
+        
+        # 最新順でソート（インデックス活用）
+        statement = statement.order_by(desc(Task.created_at)).limit(limit)
+        
+        result = await db.execute(statement)
+        return result.scalars().all()
+
+    async def batch_update_task_status(
+        self, 
+        db: AsyncSession, 
+        task_ids: List[str], 
+        new_status: TaskStatus,
+        user_id: str
+    ) -> int:
+        """
+        複数タスクのステータスを一括更新
+        Railway制限下でのパフォーマンス最適化
+        """
+        
+        from sqlalchemy import update
+        
+        # 一括更新クエリ（個別更新よりも高速）
+        update_query = (
+            update(Task)
+            .where(
+                and_(
+                    Task.id.in_(task_ids),
+                    Task.user_id == user_id  # セキュリティ: 自分のタスクのみ
+                )
+            )
+            .values(
+                status=new_status,
+                updated_at=datetime.utcnow(),
+                completed_at=datetime.utcnow() if new_status == TaskStatus.DONE else None
+            )
+        )
+        
+        result = await db.execute(update_query)
+        await db.commit()
+        
+        return result.rowcount
 
 
 crud_task = CRUDTask(Task)

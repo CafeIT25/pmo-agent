@@ -246,14 +246,43 @@ class OpenAIService:
         return None
     
     def _summarize_thread(self, thread_emails: List[Dict]) -> str:
-        """スレッドの要約作成"""
+        """スレッドの要約作成（プライバシー保護強化版）"""
         summary = []
         for email in thread_emails[:5]:  # 最新5件まで
-            summary.append(f"From: {email.get('from', 'Unknown')}")
-            summary.append(f"Subject: {email.get('subject', 'No subject')}")
-            summary.append(f"Body: {email.get('body', '')[:200]}...")
+            # サーバー側でもメールアドレスの検証・除去を実行
+            from_field = self._sanitize_field(email.get('from', 'Unknown'))
+            subject_field = self._sanitize_field(email.get('subject', 'No subject'))
+            body_field = self._sanitize_field(email.get('body', '')[:200])
+            
+            summary.append(f"From: {from_field}")
+            summary.append(f"Subject: {subject_field}")
+            summary.append(f"Body: {body_field}...")
             summary.append("---")
         return "\n".join(summary)
+    
+    def _sanitize_field(self, field: str) -> str:
+        """フィールドからメールアドレスと電話番号を除去（バックエンド側ダブルチェック）"""
+        import re
+        
+        # メールアドレスパターンの除去
+        email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+        result = re.sub(email_pattern, '[メールアドレス]', field)
+        
+        # 電話番号パターンの除去
+        phone_patterns = [
+            r'\d{2,4}-\d{2,4}-\d{4}',  # ハイフン区切り
+            r'\d{10,11}',  # 連続した数字
+            r'\+81[- ]?\d{1,4}[- ]?\d{4}',  # 国際番号
+        ]
+        
+        for pattern in phone_patterns:
+            result = re.sub(pattern, '[電話番号]', result)
+        
+        # 警告ログの出力（個人情報検出時）
+        if '[メールアドレス]' in result or '[電話番号]' in result:
+            print(f"[PRIVACY WARNING] Personal information detected and sanitized in field: {field[:50]}...")
+        
+        return result
     
     def _create_email_summary(self, thread_emails: List[Dict]) -> str:
         """メール要約の作成"""

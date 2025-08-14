@@ -432,9 +432,9 @@ grep "POST /api/v1" packages/backend/pmo_agent.log
 - メールスレッド処理
 
 ### ❌ 失敗したテスト
-- Outlook大量メール同期（タイムアウト）
-  - 原因: バッチサイズが大きすぎる
-  - 対策: OUTLOOK_BATCH_SIZE=10 に変更
+- Gmail大量メール同期（遅延）
+  - 原因: 個別API呼び出しによるN+1問題
+  - 対策: 同期対象を過去3日間に制限、または増分同期を活用
 
 ### ⚠️ 注意事項
 - OpenAI API使用量: $0.15

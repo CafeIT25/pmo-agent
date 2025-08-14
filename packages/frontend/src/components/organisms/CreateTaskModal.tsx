@@ -12,6 +12,7 @@ import { Button } from '@/components/atoms/button';
 import { Input } from '@/components/atoms/input';
 import { Textarea } from '@/components/atoms/textarea';
 import { Label } from '@/components/atoms/label';
+import { DatePicker } from '@/components/atoms/date-picker';
 import {
   Select,
   SelectContent,
@@ -158,16 +159,11 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
 
             <div className="grid gap-2">
               <Label htmlFor="due_date" className="text-foreground">期限</Label>
-              <div className="relative">
-                <Input
-                  id="due_date"
-                  type="date"
-                  value={taskData.due_date}
-                  onChange={(e) => setTaskData({ ...taskData, due_date: e.target.value })}
-                  className="text-foreground [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100"
-                  placeholder="期限を選択..."
-                />
-              </div>
+              <DatePicker
+                value={taskData.due_date}
+                onChange={(date) => setTaskData({ ...taskData, due_date: date })}
+                placeholder="期限を選択..."
+              />
             </div>
           </div>
 
