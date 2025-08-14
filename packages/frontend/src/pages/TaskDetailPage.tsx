@@ -121,18 +121,22 @@ export default function TaskDetailPage() {
           <Tabs defaultValue="overview" className="w-full">
             <TabsList>
               <TabsTrigger value="overview">概要</TabsTrigger>
-              <TabsTrigger value="email">メール履歴</TabsTrigger>
+              {task.created_by === 'ai' && (
+                <TabsTrigger value="email">メール履歴</TabsTrigger>
+              )}
               <TabsTrigger value="investigation">AI調査</TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>タスク詳細</CardTitle>
+                  <CardTitle>{task.created_by === 'ai' ? 'タスク詳細' : 'タスク概要'}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium mb-2 text-foreground">説明</h3>
+                    <h3 className="text-sm font-medium mb-2 text-foreground">
+                      {task.created_by === 'ai' ? '説明' : '概要'}
+                    </h3>
                     <p className="text-sm text-foreground/70">{task.description}</p>
                   </div>
                   
@@ -153,7 +157,8 @@ export default function TaskDetailPage() {
               </Card>
             </TabsContent>
             
-            <TabsContent value="email" className="space-y-4">
+            {task.created_by === 'ai' && (
+              <TabsContent value="email" className="space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle>メール履歴</CardTitle>
@@ -219,7 +224,8 @@ export default function TaskDetailPage() {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
+              </TabsContent>
+            )}
             
             <TabsContent value="investigation" className="space-y-4">
               <Card className="p-0 overflow-hidden">

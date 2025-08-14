@@ -83,6 +83,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
                 value={taskData.title}
                 onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
                 placeholder="例: レポート作成"
+                className="text-foreground"
                 required
               />
             </div>
@@ -94,7 +95,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
                 value={taskData.description}
                 onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
                 placeholder="タスクの詳細な説明を入力..."
-                className="min-h-[100px]"
+                className="min-h-[100px] text-foreground"
               />
             </div>
 
@@ -163,7 +164,7 @@ export default function CreateTaskModal({ isOpen, onClose, onCreateTask }: Creat
                   type="date"
                   value={taskData.due_date}
                   onChange={(e) => setTaskData({ ...taskData, due_date: e.target.value })}
-                  className="text-foreground [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                  className="text-foreground [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100"
                   placeholder="期限を選択..."
                 />
               </div>
