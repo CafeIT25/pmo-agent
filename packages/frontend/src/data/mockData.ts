@@ -201,6 +201,16 @@ export const mockTasks = [
     created_at: "2025-08-08T13:00:00Z",
     updated_at: "2025-08-13T08:00:00Z",
     email_summary: "関連メール 5 件\n\n1. 2025-08-08 - 監査法人\n   監査結果報告書\n2. 2025-08-09 - セキュリティチーム\n   対応方針の検討\n3. 2025-08-12 - 開発チーム\n   修正完了報告"
+  },
+  {
+    id: "task-004",
+    title: "週次ミーティング資料準備",
+    description: "来週のチームミーティング用の資料を作成する。\n- 進捗状況のまとめ\n- 課題の整理\n- 次週の計画",
+    status: "todo",
+    priority: "medium",
+    created_by: "user",
+    created_at: "2025-08-13T10:30:00Z",
+    updated_at: "2025-08-13T10:30:00Z"
   }
 ];
 
