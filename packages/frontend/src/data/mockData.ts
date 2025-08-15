@@ -328,3 +328,120 @@ export const mockInvestigationResult = {
 
 この順序で進めることで、効率的かつ品質の高いUI設計書を作成できます。`
 };
+
+// AI調査モーダル用デモ会話履歴
+export const sampleConversationHistory = [
+  {
+    id: 'hist-001',
+    threadId: 'thread-task-001',
+    requestType: 'research',
+    prompt: 'このメールスレッドの要点をまとめて。',
+    response: '## メール要点\n\n- **課題**: ユーザーからAPIパフォーマンスに関する指摘。\n- **原因**: 特定のDBクエリが低速。\n- **依頼**: 改善策の調査と提案。',
+    modelId: 'gpt-5-mini',
+    cost: 0.0012,
+    createdAt: '2025-08-14T10:30:00Z'
+  },
+  {
+    id: 'hist-002',
+    threadId: 'thread-task-001',
+    requestType: 'solution',
+    prompt: '具体的な解決策を3つ提案して。',
+    response: '## 解決策案\n\n1. **インデックス追加**: `users`テーブルの`last_login`カラムにインデックスを追加。\n2. **クエリ修正**: `JOIN`の順序を見直し、`EXPLAIN`で効果測定。\n3. **キャッシュ導入**: `Redis`等でクエリ結果を10分間キャッシュ。',
+    modelId: 'gpt-5-mini',
+    cost: 0.0025,
+    createdAt: '2025-08-14T11:15:00Z'
+  },
+  {
+    id: 'hist-003',
+    threadId: 'thread-task-001',
+    requestType: 'research',
+    prompt: 'キャッシュ導入のメリット・デメリットを教えて。',
+    response: '## キャッシュ導入の評価\n\n**メリット**:\n- DB負荷の大幅削減\n- API応答速度の向上\n\n**デメリット**:\n- データ同期の遅延（最大10分）\n- メモリ消費量の増加',
+    modelId: 'gpt-5-mini',
+    cost: 0.0018,
+    createdAt: '2025-08-14T12:00:00Z'
+  },
+  {
+    id: 'hist-004',
+    threadId: 'thread-task-001',
+    requestType: 'solution',
+    prompt: 'インデックス追加のためのSQLを生成して。',
+    response: '```sql\nCREATE INDEX idx_users_last_login ON users (last_login);\n```\n**注意**: 本番環境適用前にステージングでテストしてください。',
+    modelId: 'gpt-5-nano',
+    cost: 0.0005,
+    createdAt: '2025-08-14T13:30:00Z'
+  },
+  {
+    id: 'hist-005',
+    threadId: 'thread-task-001',
+    requestType: 'research',
+    prompt: '過去の類似案件を検索して。',
+    response: '2024年3月の「プロジェクトX」で同様のパフォーマンス改善実績がありました。詳細は社内Wikiを参照してください。',
+    modelId: 'internal-search-engine',
+    cost: 0,
+    createdAt: '2025-08-14T14:00:00Z'
+  }
+];
+
+// コスト最適化デモデータ
+export const sampleCostOptimization = {
+  tokens: {
+    original: 12800,
+    optimized: 3200,
+    reduction_rate: 0.75
+  },
+  cost: {
+    original_usd: 0.045,
+    optimized_usd: 0.008,
+    reduction_rate: 0.82
+  },
+  optimization_details: [
+    {
+      technique: "履歴コンテキスト圧縮",
+      contribution: "60%",
+      description: "過去の対話履歴を要約し、関連性の高い部分のみをコンテキストとして使用しました。"
+    },
+    {
+      technique: "プロンプトの最適化",
+      contribution: "25%",
+      description: "ユーザーの意図をより少ないトークンで表現するようプロンプトを内部的に書き換えました。"
+    },
+    {
+      technique: "モデルの自動選択",
+      contribution: "15%",
+      description: "質問の複雑度に応じて、コスト効率の良い `gpt-5-nano` を自動選択しました。"
+    }
+  ]
+};
+
+// AIチャットパネル用デモ会話履歴
+export const mockChatHistory = [
+  {
+    id: 'chat-hist-001',
+    role: 'user',
+    content: '以前のやり取りについて教えて。',
+    timestamp: new Date('2025-08-14T10:30:00Z'),
+    status: 'sent',
+  },
+  {
+    id: 'chat-hist-002',
+    role: 'assistant',
+    content: 'はい。以前、データベースのパフォーマンス改善についてご相談いただきました。具体的には、クエリの遅延が問題となっており、インデックス追加やキャッシュ導入を検討しました。',
+    timestamp: new Date('2025-08-14T10:31:00Z'),
+    status: 'sent',
+  },
+  {
+    id: 'chat-hist-003',
+    role: 'user',
+    content: 'その時の最終的な結論は何だった？',
+    timestamp: new Date('2025-08-14T11:00:00Z'),
+    status: 'sent',
+  },
+  {
+    id: 'chat-hist-004',
+    role: 'assistant',
+    content: '最終的に、影響範囲の少ないインデックス追加を優先して対応し、キャッシュ導入は次期フェーズの課題として見送る、という結論になりました。',
+    timestamp: new Date('2025-08-14T11:02:00Z'),
+    status: 'sent',
+  },
+];

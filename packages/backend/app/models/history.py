@@ -41,11 +41,13 @@ class AISupport(SQLModel, table=True):
     
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     task_id: UUID = Field(foreign_key="tasks.id", index=True)
+    thread_id: Optional[str] = Field(default=None, index=True)  # メールスレッドID
     request_type: AISupportType
     prompt: str
     response: str
     model_id: str
     cost: Optional[float] = None
+    metadata: Optional[Dict] = Field(default=None, sa_column_kwargs={"type": "json"})  # 追加メタデータ
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     # リレーション

@@ -1,0 +1,77 @@
+# Serena MCP Configuration for PMO Agent Project
+# このファイルは serena MCP の動作を制御します
+
+# 基本設定
+project_name: "pmo-agent"
+project_description: "AI-powered Project Management Office Agent"
+
+# コンテキスト設定
+default_context: "ide-assistant"
+
+# 対応言語とファイルタイプ
+languages:
+  - typescript
+  - javascript
+  - python
+  - json
+  - yaml
+  - markdown
+
+# インデックス対象ディレクトリ
+index_directories:
+  - "packages/frontend/src"
+  - "packages/backend/app"
+  - "docs"
+
+# 除外パターン
+exclude_patterns:
+  - "node_modules/**"
+  - "dist/**"
+  - "build/**"
+  - ".git/**"
+  - "*.log"
+  - "coverage/**"
+  - "__pycache__/**"
+
+# セマンティック検索設定
+semantic_search:
+  enabled: true
+  max_results: 20
+  similarity_threshold: 0.7
+
+# コード編集設定
+code_editing:
+  enabled: true
+  backup_on_edit: true
+  auto_format: true
+
+# シェル実行設定
+shell_execution:
+  enabled: true
+  working_directory: "/mnt/c/Users/itsek/sources/claude-work/claude-code-cookbook/pmo-agent"
+  timeout: 300
+
+# ログ設定
+logging:
+  level: "INFO"
+  file: ".serena/logs/serena.log"
+
+# パフォーマンス設定
+performance:
+  cache_enabled: true
+  max_file_size: 1048576  # 1MB
+  index_on_startup: true
+
+# プロジェクト固有設定
+project_settings:
+  # Frontend (React/TypeScript)
+  frontend:
+    base_path: "packages/frontend"
+    file_extensions: [".tsx", ".ts", ".jsx", ".js", ".css", ".scss"]
+    ignore_patterns: ["node_modules", "dist", ".next"]
+  
+  # Backend (FastAPI/Python)
+  backend:
+    base_path: "packages/backend"
+    file_extensions: [".py", ".sql", ".yml", ".yaml"]
+    ignore_patterns: ["__pycache__", "venv", ".pytest_cache"]

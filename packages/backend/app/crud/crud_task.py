@@ -210,15 +210,23 @@ class CRUDTask(CRUDBase[Task]):
         self,
         db: AsyncSession,
         task_id: str,
+        thread_id: Optional[str],
         support_type: str,
+        prompt: str,
         ai_response: str,
+        model_id: str = "gpt-4",
+        cost: Optional[float] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> AISupport:
-        """Create AI support record"""
+        """Create AI support record with thread support"""
         support = AISupport(
             task_id=task_id,
-            support_type=support_type,
-            ai_response=ai_response,
+            thread_id=thread_id,
+            request_type=support_type,
+            prompt=prompt,
+            response=ai_response,
+            model_id=model_id,
+            cost=cost,
             metadata=metadata or {}
         )
         db.add(support)
@@ -237,6 +245,81 @@ class CRUDTask(CRUDBase[Task]):
         ).order_by(AISupport.created_at.desc())
         result = await db.execute(statement)
         return result.scalars().all()
+    
+    async def get_ai_supports_by_thread(
+        self,
+        db: AsyncSession,
+        task_id: str,
+        thread_id: str
+    ) -> List[AISupport]:
+        """Get AI support history for specific thread"""
+        statement = select(AISupport).where(
+            and_(
+                AISupport.task_id == task_id,
+                AISupport.thread_id == thread_id
+            )
+        ).order_by(AISupport.created_at.asc())  # スレッド内は時系列順
+        result = await db.execute(statement)
+        return result.scalars().all()
+    
+    async def get_all_thread_ai_supports(
+        self,
+        db: AsyncSession,
+        task_id: str
+    ) -> Dict[str, List[AISupport]]:
+        """Get all AI support history grouped by thread"""
+        statement = select(AISupport).where(
+            AISupport.task_id == task_id
+        ).order_by(AISupport.thread_id, AISupport.created_at.asc())
+        
+        result = await db.execute(statement)
+        supports = result.scalars().all()
+        
+        # スレッドIDでグループ化
+        grouped_supports = {}
+        for support in supports:
+            thread_key = support.thread_id or "no_thread"
+            if thread_key not in grouped_supports:
+                grouped_supports[thread_key] = []
+            grouped_supports[thread_key].append(support)
+        
+        return grouped_supports
+    
+    async def get_limited_context_for_api(
+        self,
+        db: AsyncSession,
+        task_id: str,
+        thread_id: str,
+        max_tokens: int = 4000
+    ) -> List[AISupport]:
+        """
+        API送信用の制限されたコンテキストを取得
+        トークン数制限でコスト最適化
+        """
+        # 指定スレッドの履歴を新しい順で取得
+        all_history = await self.get_ai_supports_by_thread(db, task_id, thread_id)
+        
+        # トークン計算（日本語の概算）
+        ESTIMATED_TOKENS_PER_CHAR = 0.25
+        
+        def calculate_tokens(text: str) -> int:
+            return max(1, int(len(text) * ESTIMATED_TOKENS_PER_CHAR))
+        
+        # 新しい履歴から順に追加
+        limited_history = []
+        total_tokens = 0
+        
+        # 逆順で処理（新しいものから）
+        for support in reversed(all_history):
+            support_tokens = calculate_tokens(support.prompt + support.response)
+            
+            if total_tokens + support_tokens <= max_tokens:
+                limited_history.insert(0, support)  # 元の順序を保持
+                total_tokens += support_tokens
+            else:
+                break
+        
+        return limited_history
 
     async def get_dashboard_summary_optimized(
         self, 

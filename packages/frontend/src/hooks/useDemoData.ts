@@ -79,6 +79,27 @@ export const useDemoData = () => {
     return response.data;
   };
 
+  // AI調査履歴取得
+  const fetchInvestigationHistory = async (threadId: string) => {
+    if (isDemoMode) {
+      // デモモードでは、新しいモックデータを返す
+      const { sampleConversationHistory } = await import('@/data/mockData');
+      return sampleConversationHistory.filter(h => h.threadId === threadId);
+    }
+    const response = await apiClient.get(`/api/v1/ai-supports/history/${threadId}`);
+    return response.data;
+  };
+
+  // コスト最適化情報取得
+  const fetchCostOptimization = async (threadId: string) => {
+    if (isDemoMode) {
+      const { sampleCostOptimization } = await import('@/data/mockData');
+      return sampleCostOptimization;
+    }
+    const response = await apiClient.get(`/api/v1/ai-supports/cost-optimization/${threadId}`);
+    return response.data;
+  };
+
   // メール同期
   const syncEmails = async () => {
     if (isDemoMode) {
@@ -125,13 +146,29 @@ export const useDemoData = () => {
     return response.data;
   };
 
+  // AIチャット履歴取得
+  const fetchChatHistory = async (taskId: string) => {
+    if (isDemoMode) {
+      const { mockChatHistory } = await import('@/data/mockData');
+      // taskId に基づいて履歴をフィルタリングするロジックをここに追加可能
+      // この例では、常に同じモックデータを返します
+      return mockChatHistory;
+    }
+    const response = await apiClient.get(`/api/v1/tasks/${taskId}/chathistory`);
+    return response.data;
+  };
+
   return {
     isDemoMode,
+    isDemo: isDemoMode, // AIChatPanel で使用される別名
     fetchUsageData,
     fetchTasksData,
     fetchSettingsData, 
     fetchNotificationsData,
     fetchInvestigationData,
+    fetchInvestigationHistory,
+    fetchCostOptimization,
+    fetchChatHistory,
     syncEmails,
     createTask,
     updateTask

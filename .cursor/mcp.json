@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project-root",
+        "/mnt/c/Users/itsek/sources/claude-work/claude-code-cookbook/pmo-agent"
+      ],
+      "env": {
+        "SERENA_CONFIG_PATH": "/mnt/c/Users/itsek/sources/claude-work/claude-code-cookbook/pmo-agent/.serena/serena_config.yml"
+      }
+    }
+  }
+}

@@ -12,7 +12,7 @@ import { useDemoData } from '@/hooks/useDemoData';
 
 export default function TasksPage() {
   const navigate = useNavigate();
-  const [view, setView] = useState<'card' | 'list'>('card');
+  const [view, setView] = useState<'card' | 'list'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -168,7 +168,7 @@ export default function TasksPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
+        <div className={view === 'card' ? 'grid gap-4 md:grid-cols-2 lg:grid-cols-3' : 'space-y-2'}>
           {displayTasks
             .filter(task => 
               task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -249,27 +249,138 @@ function TaskCard({
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'done':
+        return '完了';
+      case 'progress':
+        return '進行中';
+      default:
+        return 'TODO';
+    }
+  };
+
+  // Card View（グリッド表示）
+  if (view === 'card') {
+    return (
+      <Card className="transition-all duration-200 hover:shadow-lg rounded-xl border border-border/50 hover:border-primary/30 bg-gradient-to-r from-card to-card/90 hover:from-primary/5 hover:to-accent/5">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-2 flex-1">
+              {getStatusIcon(task.status)}
+              <h3 
+                className="text-base font-semibold text-foreground cursor-pointer hover:text-primary transition-colors duration-200"
+                onClick={onClick}
+              >
+                {task.title}
+              </h3>
+              {task.created_by === 'ai' && (
+                <Bot className="h-4 w-4 text-accent opacity-70" />
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Badge variant={getPriorityColor(task.priority)} className="text-xs px-2 py-1 rounded-full font-semibold">
+                {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <p className="text-sm text-foreground/70 mb-4 line-clamp-2">
+            {task.description || 'タスクの説明がありません'}
+          </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-xs text-foreground/60 flex-1 min-w-0">
+              <span>ステータス:</span>
+              <span className="font-medium">{getStatusText(task.status)}</span>
+            </div>
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <Select 
+                value={task.status} 
+                onValueChange={(value) => {
+                  onStatusChange(task.id, value);
+                  event?.stopPropagation();
+                }}
+              >
+                <SelectTrigger className="w-[110px] h-7 text-xs rounded-lg border-border/50 bg-background/50" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center truncate">
+                    {getStatusIcon(task.status)}
+                    <span className="ml-1.5 truncate">
+                      {getStatusText(task.status)}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todo">
+                    <div className="flex items-center text-xs">
+                      <AlertCircle className="mr-1.5 h-3 w-3" />
+                      TODO
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="progress">
+                    <div className="flex items-center text-xs">
+                      <Clock className="mr-1.5 h-3 w-3" />
+                      進行中
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="done">
+                    <div className="flex items-center text-xs">
+                      <CheckCircle className="mr-1.5 h-3 w-3" />
+                      完了
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {task.source_email_link && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 flex-shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(task.source_email_link, '_blank');
+                  }}
+                  title="元メールを開く"
+                >
+                  <Mail className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // List View（リスト表示）
   return (
-    <Card className="transition-all duration-200 hover:shadow-lg rounded-xl border border-border/50 hover:border-primary/30 bg-gradient-to-r from-card to-card/90 hover:from-primary/5 hover:to-accent/5">
-      <CardContent className="flex items-center justify-between py-3 px-4">
+    <Card className="transition-all duration-200 hover:shadow-md rounded-lg border border-border/50 hover:border-primary/30 bg-card/50 hover:bg-card">
+      <CardContent className="flex items-center justify-between py-2 px-4">
         {/* 左側: タスク名とアイコン */}
-        <div className="flex items-center space-x-3 flex-1">
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
           <div className="flex-shrink-0">
             {getStatusIcon(task.status)}
           </div>
-          <h3 
-            className="text-sm font-medium text-foreground cursor-pointer hover:text-primary flex-1 truncate transition-all duration-200 hover:translate-x-1"
-            onClick={onClick}
-          >
-            {task.title}
-          </h3>
+          <div className="flex-1 min-w-0">
+            <h3 
+              className="text-sm font-medium text-foreground cursor-pointer hover:text-primary truncate transition-all duration-200 hover:translate-x-1"
+              onClick={onClick}
+            >
+              {task.title}
+            </h3>
+            {task.description && (
+              <p className="text-xs text-foreground/60 truncate mt-0.5">
+                {task.description}
+              </p>
+            )}
+          </div>
           {task.created_by === 'ai' && (
-            <Bot className="h-3.5 w-3.5 text-accent opacity-70" />
+            <Bot className="h-3.5 w-3.5 text-accent opacity-70 flex-shrink-0 ml-3" />
           )}
         </div>
 
         {/* 右側: コントロール */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
           {/* 優先度バッジ */}
           <Badge variant={getPriorityColor(task.priority)} className="text-xs px-2 py-0.5 rounded-full font-semibold">
             {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
@@ -283,7 +394,7 @@ function TaskCard({
               event?.stopPropagation();
             }}
           >
-            <SelectTrigger className="w-[110px] h-8 text-xs rounded-lg border-border/50 bg-background/50" onClick={(e) => e.stopPropagation()}>
+            <SelectTrigger className="w-[100px] h-7 text-xs rounded-lg border-border/50 bg-background/50" onClick={(e) => e.stopPropagation()}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

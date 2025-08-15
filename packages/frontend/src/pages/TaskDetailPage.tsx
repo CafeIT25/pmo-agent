@@ -24,6 +24,7 @@ import AIChatPanel from '@/components/organisms/AIChatPanel';
 export default function TaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  
 
   // モックデータから取得
   const taskDetail = getTaskDetail(id || '');
@@ -228,10 +229,14 @@ export default function TaskDetailPage() {
             )}
             
             <TabsContent value="investigation" className="space-y-4">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold">AI調査・分析</h3>
+              </div>
+              
               <Card className="p-0 overflow-hidden">
                 <AIChatPanel
+                  taskId={task.id}
                   taskTitle={task.title}
-                  emailThread={taskDetail.email_thread || []}
                 />
               </Card>
             </TabsContent>
@@ -322,6 +327,7 @@ export default function TaskDetailPage() {
           </Card>
         </div>
       </div>
+
     </div>
   );
 }
